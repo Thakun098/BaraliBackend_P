@@ -32,7 +32,13 @@ require("./app/routes/caltest.routes")(app);
 require("./app/routes/booking.routes")(app);
 require("./app/routes/payment.routes")(app);
 
-const port = process.env.SERVER_PORT || 5000;
+// Health check / Index route
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
+
+// Railway uses PORT, fallback to SERVER_PORT or 5000
+const port = process.env.PORT || process.env.SERVER_PORT || 5000;
 const host = "0.0.0.0";
 app.listen(port, host, () => {
   console.log(`Server is running on http://${host}:${port}`);
