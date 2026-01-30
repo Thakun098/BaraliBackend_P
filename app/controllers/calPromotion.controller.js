@@ -28,8 +28,6 @@ if (isNaN(roomId) || roomId <= 0) {
         if (new Date(checkInDate) >= new Date(checkOutDate)) {
     return res.status(400).json({ message: "Invalid check-in/check-out dates" });
 }
-
-        //  ไม่รองรับกรณีผู้ใหญ่ 2 เด็ก 2
         if (adults === 2 && children === 2) {
             return res.status(400).json({
                 message: "ไม่รองรับกรณีผู้ใหญ่ 2 คน เด็ก 2 คน กรุณาปรับจำนวนผู้เข้าพัก"
@@ -40,7 +38,7 @@ if (isNaN(roomId) || roomId <= 0) {
             include: [
                 {
                     model: Type,
-                    as: 'type'  // ต้องตรงกับ association ที่ตั้งไว้ใน model
+                    as: 'type'
                 }
             ]
         });
@@ -50,30 +48,22 @@ if (isNaN(roomId) || roomId <= 0) {
         if (!room.price_per_night) {
     return res.status(400).json({ message: "Room price is not defined." });
 }
-
         const checkIn = new Date(checkInDate);
         const checkOut = new Date(checkOutDate);
         const numberOfNights = Math.ceil(Math.abs(checkOut - checkIn) / (1000 * 3600 * 24));
-
-        //  คิดส่วนลดจากผู้ใหญ่ 2 คนแรกเท่านั้น
         const basePricePerNight = room.price_per_night;
         const priceWithoutDiscount = basePricePerNight * numberOfNights;
-
         const promotions = await db.promotion.findAll({
             include: [{ model: db.rooms, as: "rooms", where: { id: roomId } }],
             attributes: ["name", "discount"]
         });
-
         let discountPercent = promotions.reduce((sum, promo) => sum + promo.discount, 0);
         let discountedPrice = priceWithoutDiscount;
 
         if (discountPercent > 0) {
-            // คิดเฉพาะสำหรับผู้ใหญ่ 2 คนแรกเท่านั้น
             const eligiblePrice = basePricePerNight * numberOfNights;
             discountedPrice = eligiblePrice - (eligiblePrice * discountPercent / 100);
         }
-
-        //  คำนวณ Extra Charge
         let extraAdultCount = Math.max(0, adults - 2);
         let extraChildren = 0;
 
@@ -82,17 +72,12 @@ if (isNaN(roomId) || roomId <= 0) {
         } else if (adults >= 2 && children >= 1) {
             extraChildren = Math.max(0, children - 1);
         }
-
-        // กรณีผู้ใหญ่ >= 2 และเด็ก 1 คน → ต้องคิด 749
         if (adults >= 2 && children === 1) {
             extraChildren = 1;
         }
-
         const extraAdultCost = extraAdultCount * extraBedForAdult * numberOfNights;
         const extraChildrenCost = extraChildren * extraBedForChildren * numberOfNights;
-
         const totalPrice = discountedPrice + extraAdultCost + extraChildrenCost;
-
         return res.status(200).json({
             roomInfo: room,
             originalPrice: priceWithoutDiscount,
@@ -106,7 +91,6 @@ if (isNaN(roomId) || roomId <= 0) {
             numberOfNights,
             promotions
         });
-
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error calculating promotion" });

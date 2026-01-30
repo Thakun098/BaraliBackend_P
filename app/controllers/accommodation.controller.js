@@ -27,7 +27,7 @@ exports.getAll = async (req, res) => {
                     as: "facilities",
                     attributes: ["name"],
                     through: {
-                        attributes: [] // Exclude the join table attributes
+                        attributes: [] 
                     }
                 }
             ],
@@ -39,8 +39,6 @@ exports.getAll = async (req, res) => {
 };
 
 exports.getPromotion = async (req, res) => {
-    // const checkIn = dayjs().add(1, 'day').format('YYYY-MM-DD');
-    // const checkOut = dayjs().add(10, 'day').format('YYYY-MM-DD'); 
     const now = dayjs().format('YYYY-MM-DD');
     try {
         const promotion = await Rooms.findAll({
@@ -53,8 +51,8 @@ exports.getPromotion = async (req, res) => {
                 {
                     model: Promotion,
                     as: "promotions",
-                    required: true, //  ให้ return เฉพาะที่ JOIN แล้วมี promotion
-                    through: { attributes: [] }, // ซ่อนข้อมูลในตาราง join
+                    required: true,
+                    through: { attributes: [] },
                     attributes: ["name", "discount"]
                 },
                 {
@@ -62,7 +60,7 @@ exports.getPromotion = async (req, res) => {
                     as: "facilities",
                     attributes: ["name"],
                     through: {
-                        attributes: [] // Exclude the join table attributes
+                        attributes: []
                     }
                 },
             ]
@@ -72,7 +70,6 @@ exports.getPromotion = async (req, res) => {
         res.status(500).json({ message: "Error fetching Promotions" });
     }
 };
-
 exports.getPopularRoom = async (req, res) => {
     try {
         const limitNum = 4;
@@ -100,36 +97,29 @@ exports.getPopularRoom = async (req, res) => {
                     as: "facilities",
                     attributes: ["name"],
                     through: {
-                        attributes: [] // Exclude the join table attributes
+                        attributes: []
                     }
                 }
 
             ],
         });
-        // res.send(rooms)
             const popularRooms = rooms.map(room => {
             const roomData = room.toJSON();
             const bookings = roomData.bookings || [];
-
             const validRatings = bookings
                 .map(b => b.checkOutRating)
                 .filter(r => typeof r === 'number');
-
             const averageRating = validRatings.length > 0
                 ? validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length
                 : 0;
-
             const ratingPercentage = (averageRating / 5) * 100;
-
             const now = new Date();
             const thirtyDaysAgo = new Date(now);
             thirtyDaysAgo.setDate(now.getDate() - 30);
-
             const recentBookings = bookings.filter(b => {
                 const bookingDate = new Date(b.checkInDate);
                 return bookingDate >= thirtyDaysAgo && bookingDate <= now;
             });
-
             const popularityScore = (averageRating * 0.5) + (recentBookings.length * 0.5);
 
             return {
@@ -152,8 +142,6 @@ exports.getPopularRoom = async (req, res) => {
         res.status(500).json({ message: "Error fetching popular rooms" + error });
     }
 };
-
-
 exports.getSearch = async (req, res) => {
     try {
         const { checkIn, checkOut, adults = 1, children = 0, selectedTypes = "" } = req.query;
@@ -161,7 +149,6 @@ exports.getSearch = async (req, res) => {
         if (!checkIn || !checkOut) {
             return res.status(400).json({ message: "Please provide checkIn and checkOut dates." });
         }
-
         const now = new Date().toISOString();
 
         const rooms = await Rooms.findAll({
@@ -191,7 +178,6 @@ exports.getSearch = async (req, res) => {
                 [Op.and]: [
                     { max_adults: { [Op.gte]: adults } },
                     { max_children: { [Op.gte]: children } },
-                    // Use NOT EXISTS logic to exclude overlapping bookings
                     Sequelize.literal(`
                         NOT EXISTS (
                             SELECT 1 FROM "bookings" AS b
@@ -217,15 +203,12 @@ exports.getSearch = async (req, res) => {
             },
             order: [['id', 'ASC']]
         });
-
         return res.status(200).json(rooms);
     } catch (error) {
         console.error("Search error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
-
 exports.getRoomCountByType = async (req, res) => {
     try {
         const { checkIn, checkOut } = req.query;
@@ -233,9 +216,7 @@ exports.getRoomCountByType = async (req, res) => {
         if (!checkIn || !checkOut) {
             return res.status(400).json({ message: "Please provide checkIn and checkOut dates" });
         }
-
         const now = new Date();
-
         const types = await Type.findAll({
             attributes: ['id', 'name'],
             include: [
@@ -280,14 +261,12 @@ exports.getRoomCountByType = async (req, res) => {
             ],
             order: [['id', 'DESC']]
         });
-
         const results = types.map(type => {
             const rooms = type.rooms || [];
 
             const bookedRoomId = rooms
                 .filter(room => (room.bookings || []).length > 0)
                 .map(room => room.id);
-
             return {
                 typeId: type.id,
                 typeName: type.name,
@@ -297,7 +276,6 @@ exports.getRoomCountByType = async (req, res) => {
                 bookedRoomCount: bookedRoomId.length,
             };
         });
-
         res.status(200).json(results);
     } catch (error) {
         console.error("Error in getRoomCountByType:", error);
@@ -312,11 +290,8 @@ exports.getAvailableRooms = async (req, res) => {
     if (!formattedCheckIn || !formattedCheckOut) {
         return res.status(400).json({ message: "Please provide checkIn and checkOut dates" });
     }
-
     try {
         const now = new Date();
-
-        // ดึงห้องทั้งหมด พร้อมประเภท และการจองที่อาจทับวัน
         const rooms = await Rooms.findAll({
             include: [
                 {
@@ -359,8 +334,6 @@ exports.getAvailableRooms = async (req, res) => {
                 }
             ]
         });
-
-        // เตรียม object สำหรับเก็บข้อมูลประเภท
         const roomTypeMap = {};
 
         rooms.forEach(room => {
@@ -377,11 +350,7 @@ exports.getAvailableRooms = async (req, res) => {
                     availableRooms: 0
                 };
             }
-
-            // บวกจำนวนห้องทั้งหมดของประเภทนี้
             roomTypeMap[typeId].totalRooms += 1;
-
-            // ถ้าห้องนี้ถูกจองในช่วงวันนั้น และมี payment ที่ผ่านเงื่อนไข
             if (room.bookings.length > 0) {
                 roomTypeMap[typeId].bookedRoomId.push(room.id);
                 roomTypeMap[typeId].bookedRoomCount += 1;
@@ -389,8 +358,6 @@ exports.getAvailableRooms = async (req, res) => {
                 roomTypeMap[typeId].availableRooms += 1;
             }
         });
-
-        // แปลงจาก object เป็น array เพื่อส่งกลับ
         const result = Object.values(roomTypeMap);
 
         return res.status(200).json({ availableByType: result });
@@ -403,14 +370,12 @@ exports.getAvailableRooms = async (req, res) => {
 
 exports.getAvailableRoomsWithPromotion = async (req, res) => {
     try {
-        // Use params if provided, otherwise fallback to tomorrow and the day after tomorrow
         let { checkIn, checkOut } = req.query;
         if (!checkIn || !checkOut) {
             checkIn = dayjs().add(1, 'day').format('YYYY-MM-DD');
             checkOut = dayjs().add(2, 'day').format('YYYY-MM-DD');
         }
         const now = new Date().toISOString();
-
         const rooms = await Rooms.findAll({
             include: [
                 {
@@ -466,16 +431,13 @@ exports.getAvailableRoomsWithPromotion = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
 exports.getAllTypes = async (req, res) => {
     try {
-
         const types = await Type.findAll();
         res.status(200).json(types)
 
     } catch (error) {
         res.status(500).json({ message: "error get types" })
-
     }
 }
 

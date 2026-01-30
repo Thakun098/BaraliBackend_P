@@ -75,9 +75,6 @@ exports.getOrderById = async (req,res) => {
     }
     
 }
-
-// controllers/bookingController.js
-
 exports.getOrdersByUserId = async (req, res) => {
     const id = req.params.id;
 
@@ -135,7 +132,6 @@ exports.getOrdersByUserId = async (req, res) => {
         return res.status(500).json({ message: "Error fetching booking list" });
     }
 };
-
 exports.getPaymentsByUserId = async (req, res) => {
   const userId = req.params.userId;
 
@@ -152,8 +148,6 @@ exports.getPaymentsByUserId = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "ไม่พบผู้ใช้" });
     }
-
-    // ดึง Payment ทั้งหมดของ user พร้อม Booking และรายละเอียดห้อง
     const payments = await Payment.findAll({
       where: { userId: userId },
       include: [
@@ -191,10 +185,9 @@ exports.getPaymentsByUserId = async (req, res) => {
       ],
       order: [['dueDate', 'DESC']]
     });
-    // เพิ่ม bookedRoom ให้กับแต่ละ payment
 const paymentsWithBookedRoom = payments.map(payment => {
   return {
-    ...payment.toJSON(), // แปลง Sequelize instance เป็น plain object
+    ...payment.toJSON(),
     bookedRoom: payment.bookings?.length || 0
   };
 });
@@ -208,5 +201,3 @@ const paymentsWithBookedRoom = payments.map(payment => {
     return res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูลการชำระเงินของผู้ใช้" });
   }
 };
-
-

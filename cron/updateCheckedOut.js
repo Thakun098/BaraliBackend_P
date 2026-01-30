@@ -19,7 +19,4 @@ async function updateCheckedOut() {
   console.log("[Cron] Current time (UTC):", new Date().toISOString());
 
 }
-
 module.exports = updateCheckedOut;
-// 1. Update the paymentStatus to 'overdue' for pending payments with a dueDate in the past
-// 2. Log a message to the console indicating the date and time when the update was performed

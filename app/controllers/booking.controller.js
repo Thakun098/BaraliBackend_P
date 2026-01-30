@@ -11,7 +11,7 @@ const Booking = db.booking;
 const Facility = db.facility;
 const Payment = db.payment;
 const Promotion = db.promotion;
-const Receipt = db.receipt; // เพิ่มบรรทัดนี้ด้านบนสุด
+const Receipt = db.receipt;
 
 exports.makeBooking = async (req, res) => {
   try {
@@ -23,8 +23,6 @@ exports.makeBooking = async (req, res) => {
     if (roomIds.length > 9) {
       return res.status(400).json({ error: 'ไม่สามารถจองห้องพักเกิน 9 ห้องได้ในครั้งเดียว' });
     }
-
-    // ตรวจสอบความว่างของแต่ละห้อง
     for (const roomId of roomIds) {
       const overlappingBooking = await Booking.findOne({
         where: {
@@ -56,16 +54,12 @@ exports.makeBooking = async (req, res) => {
         return res.status(400).json({ error: `Room ID ${roomId} is already booked during this period.` });
       }
     }
-
-    // สร้าง payment เดียว
     const payment = await Payment.create({
       userId,
       amount: totalPrice,
       paymentStatus: 'pending',
       dueDate: dayjs.utc().add(24, 'hour').toDate(),
     });
-
-    // สร้าง bookings หลายรายการ
     const bookings = await Promise.all(
       roomIds.map(roomId =>
         Booking.create({
@@ -80,8 +74,6 @@ exports.makeBooking = async (req, res) => {
         })
       )
     );
-
-    // ดึงข้อมูล booking + room + type + promotions
     const populatedBookings = await Booking.findAll({
       where: { id: bookings.map(b => b.id) },
       include: [
@@ -95,8 +87,6 @@ exports.makeBooking = async (req, res) => {
         }
       ]
     });
-
-    // จัดรูปแบบข้อมูล
     const formattedResponse = {
       message: 'Bookings & Payment created successfully',
       id: payment.id,
@@ -112,8 +102,6 @@ exports.makeBooking = async (req, res) => {
       promotions: populatedBookings.map(b => b.room.promotions || []),
       roomType: populatedBookings.map(b => b.room.type || null),
     };
-
-    // เพิ่มส่วนนี้เพื่อบันทึกลง receipt
     await Receipt.create({
       paymentId: payment.id.toString(),
       roomIds: formattedResponse.roomIds,
@@ -128,8 +116,8 @@ exports.makeBooking = async (req, res) => {
       promotions: formattedResponse.promotions.flat().map(p => ({
     name: p.name,
     discount: p.discount
-  })).filter(p => p.name && p.discount !== undefined), // ดึงเฉพาะ name กับ discount
-      roomType: formattedResponse.roomType.map(t => t ? t.name : null).filter(Boolean), // ดึงเฉพาะชื่อ type
+  })).filter(p => p.name && p.discount !== undefined),
+      roomType: formattedResponse.roomType.map(t => t ? t.name : null).filter(Boolean),
     });
 
     return res.status(200).json(formattedResponse);

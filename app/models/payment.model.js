@@ -11,18 +11,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model: 'users', // ชื่อตาราง user ใน DB
+            model: 'users',
             key: 'id'
         }
     },
-    //     bookingId: {
-    //     type: Sequelize.INTEGER,
-    //     allowNull: false,
-    //     references: {
-    //         model: 'bookings', // ชื่อตาราง booking ใน DB
-    //         key: 'id'
-    //     }
-    // },
         paymentStatus: {
             type: Sequelize.ENUM('pending', 'paid', 'overdue', 'failed'),
             allowNull: true,

@@ -94,10 +94,6 @@ exports.getPaymentById = async (req, res) => {
         if (!payment) {
             return res.status(404).json({ message: "ไม่พบข้อมูลการชำระเงิน" });
         }
-        
-
-
-        // ส่งกลับในรูปแบบที่ frontend ใช้งานได้ง่าย
         res.status(200).json({
             id: payment.id,
             checkIn: payment.bookings[0]?.checkInDate,
@@ -118,21 +114,16 @@ exports.getPaymentById = async (req, res) => {
         res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูลการชำระเงิน" });
     }
 };
-
 exports.getReceiptById = async (req, res) => {
     const id = req.params.id;
     if (!id) {
         return res.status(400).json({ message: "กรุณาระบุ ID การชำระเงิน" });
     }
-
     try {
-        // ดึงข้อมูลจาก receipt table
         const receipt = await Receipt.findOne({ where: { paymentId: id } });
-
         if (!receipt) {
             return res.status(404).json({ message: "ไม่พบข้อมูลใบเสร็จสำหรับการชำระเงินนี้" });
         }
-
         res.status(200).json({
             id: receipt.paymentId,
             checkIn: receipt.checkIn,

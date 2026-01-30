@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     roomIds: {
-      type: Sequelize.ARRAY(Sequelize.INTEGER), // หรือ JSON ถ้าต้องการเก็บข้อมูลเพิ่มเติม
+      type: Sequelize.ARRAY(Sequelize.INTEGER),
       allowNull: false
     },
     paymentStatus: {
