@@ -7,27 +7,22 @@ const cors = require("cors");
 const path = require("path");
 const updateOverduePayments = require("./cron/updateOverduePayments");
 const updateCheckedOut = require("./cron/updateCheckedOut");
-app.use(cors({ origin: "*" }));
+
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")))
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  }),
+);
 
-db.receipt.sync({ alter: true })
-    .then( () => {
-        console.log("receipt Altered ✅")
-    }
-    )
-db.sequelize.sync({ force: false })
-    .then(() => {
-        console.log("✅ Database Sync...")
-    })
-
+db.sequelize.sync({ force: false }).then(() => {
+  console.log("✅ Database Sync...");
+});
 cron.schedule("*/2 * * * *", () => {
   updateOverduePayments();
-    updateCheckedOut();
-});
-
-app.get('/', (req, res) => {
-    res.send('Hello Elyia');
+  updateCheckedOut();
 });
 require("./app/routes/auth.routes")(app);
 require("./app/routes/accommodation.routes")(app);
@@ -38,9 +33,7 @@ require("./app/routes/booking.routes")(app);
 require("./app/routes/payment.routes")(app);
 
 const port = process.env.SERVER_PORT || 5000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port} `)
+const host = "0.0.0.0";
+app.listen(port, host, () => {
+  console.log(`Server is running on http://${host}:${port}`);
 });
-
-
-
